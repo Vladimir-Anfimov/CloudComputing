@@ -26,7 +26,7 @@ class ContactEndpoint extends Endpoint {
             }
         }
 
-        return Promise.resolve(ResponseApi.NotFound(response, { error: "Route not found" }));
+        return Promise.resolve(ResponseApi.NotImplemented(response));
     }
 
     private static async getContacts(_: IncomingMessage, response: ServerResponse) {
