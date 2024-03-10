@@ -60,7 +60,7 @@ class MessageEndpoint extends Endpoint {
         });
 
         if (!message) {
-            return ResponseApi.NotFound(response, { error: "Message not found" });
+            return ResponseApi.NotFound(response, { error: `Message with id ${messageId} and contact id ${contactId} not found` });
         }
 
         return ResponseApi.Ok(response, message);
@@ -103,6 +103,17 @@ class MessageEndpoint extends Endpoint {
             return ResponseApi.BadRequest(response, { error: "Invalid contact or message id" });
         }
 
+        const message = await prisma.message.findFirst({
+            where: {
+                id: messageId,
+                contactId: contactId
+            }
+        });
+
+        if (!message) {
+            return ResponseApi.NotFound(response, { error: `Message with id ${messageId} and contact id ${contactId} not found` });
+        }
+
         await prisma.message.delete({
             where: {
                 id: messageId,
@@ -142,7 +153,7 @@ class MessageEndpoint extends Endpoint {
         });
 
         if (!existingMessage) {
-            return ResponseApi.NotFound(response, { error: "Message not found" });
+            return ResponseApi.NotFound(response, { error: `Message with id ${messageId} and contact id ${contactId} not found` });
         }
 
         const updatedMessage = await prisma.message.update({
@@ -154,6 +165,8 @@ class MessageEndpoint extends Endpoint {
 
         return ResponseApi.Ok(response, updatedMessage);
     }
+
+
 }
 
 export default MessageEndpoint;
