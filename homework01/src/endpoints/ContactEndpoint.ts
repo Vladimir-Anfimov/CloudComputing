@@ -8,11 +8,11 @@ import { ExtractContactId } from "../utils/ExtractIdentifier";
 
 class ContactEndpoint extends Endpoint {
     public static readonly ROUTES = [
-        { method: "GET", path: "/contacts/\\d+", handler: ContactEndpoint.getContactById },
+        { method: "GET", path: "/contacts/\\w+", handler: ContactEndpoint.getContactById },
         { method: "GET", path: "/contacts", handler: ContactEndpoint.getContacts },
         { method: "POST", path: "/contacts", handler: ContactEndpoint.createContact },
-        { method: "PUT", path: "/contacts/\\d+", handler: ContactEndpoint.updateContact },
-        { method: "DELETE", path: "/contacts/\\d+", handler: ContactEndpoint.deleteContact }
+        { method: "PUT", path: "/contacts/\\w+", handler: ContactEndpoint.updateContact },
+        { method: "DELETE", path: "/contacts/\\w+", handler: ContactEndpoint.deleteContact }
     ]
 
     constructor(matchingExpression: string) {
@@ -39,24 +39,33 @@ class ContactEndpoint extends Endpoint {
     private static async createContact(request: IncomingMessage, response: ServerResponse) {
         const contact = await requestBodyHelper.getJsonBody(request);
 
-        if (!UpsertContactDto.isValid(contact)) {
-            return ResponseApi.BadRequest(response, { error: "Invalid contact format" });
+        if (!contact.isSuccess) {
+            return ResponseApi.BadRequest(response, { error: contact.errors });
+        }
+
+        const validationResult = UpsertContactDto.isValid(contact.data);
+
+        if(!validationResult.isSuccess) {
+            return ResponseApi.BadRequest(response, { error: validationResult.errors });
         }
 
         const existingContact = await prisma.contact.findFirst({
             where: {
-                email: contact.email
+                email: contact.data.email
             }
         });
 
-        
+        if (existingContact) {
+            return ResponseApi.Conflict(response, { error: `Contact with email ${contact.data.email} already exists` });
+        }
 
         const newContact = await prisma.contact.create({
-            data: contact
+            data: contact.data
         });
 
         return ResponseApi.Created(response, newContact);
     }
+
 
     private static async getContactById(request: IncomingMessage, response: ServerResponse) {
         const id = request.url ? ExtractContactId.fromUrl(request.url) : null;
@@ -91,8 +100,10 @@ class ContactEndpoint extends Endpoint {
 
         const contact = await requestBodyHelper.getJsonBody(request);
 
-        if(!UpsertContactDto.isValid(contact)) {
-            return ResponseApi.BadRequest(response, { error: "Invalid contact format" });
+        const validationResult = UpsertContactDto.isValid(contact.data);
+
+        if(!validationResult.isSuccess) {
+            return ResponseApi.BadRequest(response, { error: validationResult.errors });
         }
 
         const existingContact = await prisma.contact.findUnique({
@@ -109,7 +120,7 @@ class ContactEndpoint extends Endpoint {
             where: {
                 id
             },
-            data: contact
+            data: contact.data
         });
 
         return ResponseApi.Ok(response, updatedContact);

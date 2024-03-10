@@ -8,11 +8,11 @@ import { Endpoint } from "./Endpoint";
 
 class MessageEndpoint extends Endpoint {
     public static readonly ROUTES = [
-        { method: "GET", path: "/contacts/\\d+/messages", handler: MessageEndpoint.getMessages },
-        { method: "GET", path: "/contacts/\\d+/messages/\\d+", handler: MessageEndpoint.getMessageById },
-        { method: "POST", path: "/contacts/\\d+/messages", handler: MessageEndpoint.createMessage },
-        { method: "DELETE", path: "/contacts/\\d+/messages/\\d+", handler: MessageEndpoint.deleteMessage },
-        { method: "PUT", path: "/contacts/\\d+/messages/\\d+", handler: MessageEndpoint.updateMessage }
+        { method: "GET", path: "/contacts/\\w+/messages/\\w+", handler: MessageEndpoint.getMessageById },
+        { method: "GET", path: "/contacts/\\w+/messages", handler: MessageEndpoint.getMessages },
+        { method: "POST", path: "/contacts/\\w+/messages", handler: MessageEndpoint.createMessage },
+        { method: "DELETE", path: "/contacts/\\w+/messages/\\w+", handler: MessageEndpoint.deleteMessage },
+        { method: "PUT", path: "/contacts/\\w+/messages/\\w+", handler: MessageEndpoint.updateMessage }
     ]
 
     constructor(public matchingExpression: string) {
@@ -74,13 +74,19 @@ class MessageEndpoint extends Endpoint {
 
         const message = await requestBodyHelper.getJsonBody(request);
 
-        if (!UpsertMessageDto.isValid(message)) {
-            return ResponseApi.BadRequest(response, { error: "Invalid message format" });
+        if (!message.isSuccess) {
+            return ResponseApi.BadRequest(response, { error: message.errors });
+        }
+
+        const validationResult = UpsertMessageDto.isValid(message.data);
+
+        if (!validationResult.isSuccess) {
+            return ResponseApi.BadRequest(response, { error: validationResult.errors });
         }
 
         const newMessage = await prisma.message.create({
             data: {
-                ...message,
+                ...message.data,
                 contactId: contactId
             }
         });
@@ -118,8 +124,14 @@ class MessageEndpoint extends Endpoint {
 
         const message = await requestBodyHelper.getJsonBody(request);
 
-        if (!UpsertMessageDto.isValid(message)) {
-            return ResponseApi.BadRequest(response, { error: "Invalid message format" });
+        if (!message.isSuccess) {
+            return ResponseApi.BadRequest(response, { error: message.errors });
+        }
+
+        const validationResult = UpsertMessageDto.isValid(message.data);
+
+        if (!validationResult.isSuccess) {
+            return ResponseApi.BadRequest(response, { error: validationResult.errors });
         }
 
         const existingMessage = await prisma.message.findFirst({
@@ -137,7 +149,7 @@ class MessageEndpoint extends Endpoint {
             where: {
                 id: messageId
             },
-            data: message
+            data: message.data
         });
 
         return ResponseApi.Ok(response, updatedMessage);

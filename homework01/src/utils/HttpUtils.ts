@@ -1,4 +1,5 @@
 import { IncomingMessage } from "http";
+import Result from "./Result";
 
 
 export class requestBodyHelper {
@@ -12,14 +13,19 @@ export class requestBodyHelper {
         return body;
     }
 
-    static async getJsonBody(request: IncomingMessage): Promise<any> {
-        const body = await this.getBody(request);
+    static async getJsonBody(request: IncomingMessage): Promise<Result> {
+        try {
+            const body = await this.getBody(request);
 
-        if (!body || body.length === 0) {
-            return null;
+            if (!body || body.length === 0) {
+                return Result.Fail(["No body"]);
+            }
+
+            const json = JSON.parse(body);
+            return Result.Success(json);
         }
-
-        const json = JSON.parse(body);
-        return json;
+        catch (error) {
+            return Result.Fail(["Invalid JSON body"]);
+        }
     }
 }

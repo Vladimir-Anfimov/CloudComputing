@@ -11,8 +11,8 @@ export const prisma = new PrismaClient()
 dotenv.config();
 
 const endpoints: Endpoint[] = [
-    new ContactEndpoint("^/api/contacts(/\\d+)?$"), // Matches "/api/contacts", "/api/contacts/", "/api/contacts/{int}"
-    new MessageEndpoint("^/api/contacts/\\d+/messages(/\\d+)?$") // Matches "/api/contacts/{int}/messages", "/api/contacts/{int}/messages/", "/api/contacts/{int}/messages/{int}"
+    new ContactEndpoint("^/api/contacts(/\\w*)?$"), // Matches "/api/contacts", "/api/contacts/", "/api/contacts/{int}"
+    new MessageEndpoint("^/api/contacts/\\w+/messages(/\\w*)?$") // Matches "/api/contacts/{int}/messages", "/api/contacts/{int}/messages/", "/api/contacts/{int}/messages/{int}"
 ];
 
 
