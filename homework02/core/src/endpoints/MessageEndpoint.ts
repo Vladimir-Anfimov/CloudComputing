@@ -6,6 +6,7 @@ import { RequestMultiPartData, requestBodyHelper } from "../utils/HttpUtils";
 import { UpsertMessageDto } from "../dtos";
 import { Endpoint } from "./Endpoint";
 import { getObject, storeObject } from "../external/storage";
+import { sendMail } from "../external/mail";
 
 class MessageEndpoint extends Endpoint {
     public static readonly ROUTES = [
@@ -133,6 +134,17 @@ class MessageEndpoint extends Endpoint {
                 contactId: contactId
             }
         });
+
+        const mailText = `New message from contact ${contactId}:\n${message.data.text}`;
+
+        const mailResponse = await sendMail(mailText);
+
+        if (!mailResponse.isSuccess) {
+            console.error("Error sending mail");
+        }
+        else {
+            console.log("Mail sent successfully");
+        }
 
         return ResponseApi.Created(response, newMessage);
     }
